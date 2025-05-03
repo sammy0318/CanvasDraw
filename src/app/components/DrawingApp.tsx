@@ -2,8 +2,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   faPaintBrush, faEraser, faUndo, faRedo, faTrashAlt, 
-  faDownload, faCog, faPlus, faTrash, faEye, faEyeSlash, 
-  faLock, faLockOpen, faMagic, faSlidersH, faTimes, faSquare, 
+  faCog, faPlus, faTrash, faEye, faEyeSlash, 
+  faLock, faLockOpen, faSlidersH, faTimes, faSquare, 
   faCircle, faPalette, faLayerGroup, faVectorSquare, faFileDownload 
 } from '@fortawesome/free-solid-svg-icons';
 import { 
@@ -80,6 +80,28 @@ const CanvasDraw = () => {
     return () => window.removeEventListener('resize', initCanvas);
   }, [showApp]);
 
+  const renderCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Clear entire canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Set background color
+    ctx.fillStyle = canvasBg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw all visible layers
+    layers.forEach(layer => {
+      if (layer.visible) {
+        ctx.drawImage(layer.canvas, 0, 0);
+      }
+    });
+  }, [layers, canvasBg]);
+
   const saveCanvasState = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -99,7 +121,7 @@ const CanvasDraw = () => {
     undoStack.current.push(JSON.stringify(state));
     if (undoStack.current.length > 30) undoStack.current.shift();
     redoStack.current = [];
-  }, [layers, activeLayerIndex]);
+  }, [layers, activeLayerIndex, renderCanvas]);
   
 
   const getCoordinates = (e: MouseEvent | TouchEvent): Position => {
@@ -216,7 +238,7 @@ const stopDrawing = useCallback(() => {
 
   saveCanvasState();
   renderCanvas();
-}, [currentTool, layers, activeLayerIndex, saveCanvasState,]);
+}, [currentTool, layers, activeLayerIndex, saveCanvasState,renderCanvas]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -267,28 +289,7 @@ const stopDrawing = useCallback(() => {
   };
 
 
-  // 1. Declare renderCanvas first
-const renderCanvas = useCallback(() => {
-  const canvas = canvasRef.current;
-  if (!canvas) return;
-
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-
-  // Clear entire canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
-  // Set background color
-  ctx.fillStyle = canvasBg;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Draw all visible layers
-  layers.forEach(layer => {
-    if (layer.visible) {
-      ctx.drawImage(layer.canvas, 0, 0);
-    }
-  });
-}, [layers, canvasBg]);
+// Removed duplicate renderCanvas declaration
   
   
   const undo = () => {
@@ -393,6 +394,9 @@ const renderCanvas = useCallback(() => {
                   src="https://cdn.pixabay.com/photo/2017/08/10/02/05/tiles-shapes-2617112_1280.jpg" 
                   alt="Digital Art" 
                   className="rounded-xl shadow-2xl w-full"
+                  width={800}
+                  height={600}
+                  
                 />
               </div>
             </div>
@@ -507,6 +511,10 @@ const renderCanvas = useCallback(() => {
               ))}
               
               <div className="h-px bg-gray-600 w-full my-2" />
+              
+
+              <button onClick={saveImage}className="toolbar-item"title="SaveImage">     
+                        <FontAwesomeIcon icon={faFileDownload} className="text-gray-300" /></button>
 
               <button onClick={undo} className="toolbar-item" title="Undo">
                 <FontAwesomeIcon icon={faUndo} className="text-gray-300" />
